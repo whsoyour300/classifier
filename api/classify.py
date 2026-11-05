@@ -114,6 +114,10 @@ class handler(BaseHTTPRequestHandler):
             items = call_gemini(key, build_prompt(texts, crit))
             return self._send({"results": clean(items, len(texts)), "model": MODEL})
         except urllib.error.HTTPError as e:
-            return self._send({"results": None, "reason": f"AI 호출 실패 ({e.code}) — 모델 이름·한도를 확인"})
+            try:
+                why = json.loads(e.read().decode("utf-8"))["error"]["message"][:150]
+            except Exception:  # noqa: BLE001
+                why = "모델 이름·한도를 확인"
+            return self._send({"results": None, "reason": f"AI 호출 실패 ({e.code}) — {why}"})
         except Exception as e:  # noqa: BLE001
             return self._send({"results": None, "reason": f"AI 호출 실패 — {type(e).__name__}"})
